@@ -4,14 +4,14 @@ pipeline {
         stage('compile') {
 	   steps {
                 echo 'compiling..'
-		git 'https://github.com/shubhsharm/samplejavaapp'
-		sh script: '/opt/apache-maven-3.8.4/bin/mvn compile'
+		git 'https://github.com/rkrCoder/samplejavaapp.git'
+		sh script: '/opt/maven/bin/mvn compile'
            }
         }
         stage('codereview-pmd') {
 	   steps {
                 echo 'codereview..'
-		sh script: '/opt/apache-maven-3.8.4/bin/mvn -P metrics pmd:pmd'
+		sh script: '/opt/maven/bin/mvn -P metrics pmd:pmd'
            }
 	   post {
                success {
@@ -22,7 +22,7 @@ pipeline {
         stage('unit-test') {
 	   steps {
                 echo 'unittest..'
-	        sh script: '/opt/apache-maven-3.8.4/bin/mvn test'
+	        sh script: '/opt/maven/bin/mvn test'
                  }
 	   post {
                success {
@@ -32,13 +32,15 @@ pipeline {
         }
         stage('codecoverage') {
 	   steps {
-                echo 'codecoverage..'
-		sh script: '/opt/apache-maven-3.8.4/bin/mvn cobertura:cobertura -Dcobertura.report.format=xml'
-           }
-	   post {
-               success {
-	           cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'target/site/cobertura/coverage.xml', conditionalCoverageTargets: '70, 0, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '80, 0, 0', maxNumberOfBuilds: 0, methodCoverageTargets: '80, 0, 0', onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false                  
-               }
+              echo 'Running code coverage..'
+         script {
+            def mvnExitCode = sh script: '/opt/maven/bin/mvn verify', returnStatus: true
+            if (mvnExitCode == 0) {
+                currentBuild.result = 'SUCCESS'
+            } else {
+                currentBuild.result = 'FAILURE'
+            }
+        }
            }		
         }
         stage('package') {
